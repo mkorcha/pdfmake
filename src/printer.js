@@ -387,6 +387,7 @@ function renderLine(line, x, y, pdfKitDoc) {
 	for (var i = 0, l = line.inlines.length; i < l; i++) {
 		var inline = line.inlines[i];
 		var shiftToBaseline = lineHeight - ((inline.font.ascender / 1000) * inline.fontSize) - descent;
+		var yDrawLine = y + shiftToBaseline;
 		var options = {
 			lineBreak: false,
 			textWidth: inline.width,
@@ -398,21 +399,29 @@ function renderLine(line, x, y, pdfKitDoc) {
 		if (inline.fontFeatures) {
 			options.features = inline.fontFeatures;
 		}
+		
+		if (inline.sup) {
+			yDrawLine -= inline.fontSize * 0.75;
+		}
+		
+		if (inline.sub) {
+			yDrawLine += inline.fontSize * 0.75;
+		}
 
 		pdfKitDoc.fill(inline.color || 'black');
 
 		pdfKitDoc._font = inline.font;
 		pdfKitDoc.fontSize(inline.fontSize);
-		pdfKitDoc.text(inline.text, x + inline.x, y + shiftToBaseline, options);
+		pdfKitDoc.text(inline.text, x + inline.x, yDrawLine, options);
 
 		if (inline.linkToPage) {
 			var _ref = pdfKitDoc.ref({Type: 'Action', S: 'GoTo', D: [inline.linkToPage, 0, 0]}).end();
-			pdfKitDoc.annotate(x + inline.x, y + shiftToBaseline, inline.width, inline.height, {Subtype: 'Link', Dest: [inline.linkToPage - 1, 'XYZ', null, null, null]});
+			pdfKitDoc.annotate(x + inline.x, yDrawLine, inline.width, inline.height, {Subtype: 'Link', Dest: [inline.linkToPage - 1, 'XYZ', null, null, null]});
 		}
 
 	}
 
-	textDecorator.drawDecorations(line, x, y, pdfKitDoc);
+	textDecorator.drawDecorations(line, x, yDrawLine - shiftToBaseline, pdfKitDoc);
 }
 
 function renderWatermark(page, pdfKitDoc) {
